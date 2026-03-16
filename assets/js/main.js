@@ -72,46 +72,74 @@ if (total > 0 && dotsContainer) {
 if (prevBtn) prevBtn.addEventListener("click", () => goToSlide(current - 1));
 if (nextBtn) nextBtn.addEventListener("click", () => goToSlide(current + 1));
 
-/* ================= UCAPAN & DOA FORM ================= */
+/* ================= UCAPAN & DOA FORM (SUPABASE) ================= */
 const formUcapan = document.querySelector(".form-ucapan");
 const ucapanMsg = document.getElementById("ucapan-msg");
 const ucapanList = document.getElementById("ucapan-list");
+const supa = window.supabaseClient;
 
-if (formUcapan && ucapanMsg && ucapanList) {
+async function renderUcapan() {
+  if (!supa || !ucapanList) return;
+  ucapanList.innerHTML = "Memuat ucapan...";
+  const { data, error } = await supa
+    .from("ucapan")
+    .select("id, nama, pesan, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    ucapanList.innerHTML = "Gagal memuat ucapan.";
+    return;
+  }
+  if (!data || data.length === 0) {
+    ucapanList.innerHTML = "";
+    return;
+  }
+
+  ucapanList.innerHTML = "";
+  data.forEach((row) => {
+    const item = document.createElement("div");
+    item.className = "ucapan-item";
+    item.innerHTML =
+      '<p class="ucapan-nama">' +
+      (row.nama || "Tamu") +
+      '</p><p class="ucapan-teks">' +
+      (row.pesan || "").replace(/\n/g, "<br>") +
+      "</p>";
+    ucapanList.appendChild(item);
+  });
+}
+
+if (formUcapan && ucapanMsg && ucapanList && supa) {
+  renderUcapan();
+
   formUcapan.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const namaField = formUcapan.elements.namedItem("nama");
-    const ucapanField = formUcapan.elements.namedItem("ucapan");
-    const namaValue = namaField && "value" in namaField ? namaField.value.trim() : "";
-    const ucapanValue = ucapanField && "value" in ucapanField ? ucapanField.value.trim() : "";
+    const pesanField = formUcapan.elements.namedItem("ucapan");
+    const nama = namaField && "value" in namaField ? namaField.value.trim() : "";
+    const pesan = pesanField && "value" in pesanField ? pesanField.value.trim() : "";
 
-    const nama = namaValue || "Tamu";
-    const ucapan = ucapanValue;
-    if (!ucapan) return;
+    if (!pesan) return;
 
-    // Tambah langsung ke daftar di bawah form
-    const item = document.createElement("div");
-    item.className = "ucapan-item";
-    item.innerHTML = '<p class="ucapan-nama">' + nama + '</p><p class="ucapan-teks">' + ucapan.replace(/\n/g,"<br>") + "</p>";
-    ucapanList.prepend(item);
+    ucapanMsg.textContent = "Mengirim...";
+    ucapanMsg.className = "form-ucapan-msg";
 
-    ucapanMsg.textContent = "Terima kasih, ucapan dan doa Anda telah tercatat.";
+    const { error } = await supa.from("ucapan").insert({
+      nama: nama || "Tamu",
+      pesan: pesan,
+    });
+
+    if (error) {
+      ucapanMsg.textContent = "Gagal mengirim. Silakan coba lagi.";
+      ucapanMsg.className = "form-ucapan-msg error";
+      return;
+    }
+
+    ucapanMsg.textContent = "Terima kasih, ucapan dan doa Anda telah terkirim.";
     ucapanMsg.className = "form-ucapan-msg success";
     formUcapan.reset();
-
-    // Opsional: tetap kirim ke Formspree jika YOUR_FORM_ID sudah diganti
-    const action = formUcapan.getAttribute("action") || "";
-    if (!action.includes("YOUR_FORM_ID")) {
-      const formData = new FormData();
-      formData.append("nama", nama);
-      formData.append("ucapan", ucapan);
-      try {
-        await fetch(action, { method: "POST", body: formData, headers: { Accept: "application/json" } });
-      } catch (err) {
-        // diamkan saja; tampilan lokal sudah berhasil
-      }
-    }
+    renderUcapan();
   });
 }
 
@@ -144,3 +172,4 @@ giftCards.forEach(card => {
     }
   });
 });
+
