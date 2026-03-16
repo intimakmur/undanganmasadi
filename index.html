@@ -243,7 +243,12 @@
     </section>
 
   </main>
-
-  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const SUPABASE_URL = "https://pijfdkaclafhrorzbqdi.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamZka2FjbGFmaHJvcnpicWRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MzgxMTgsImV4cCI6MjA4OTIxNDExOH0.XFql8CLfP1gQN-LsSGSGh3utISahRrW3uMXO_jHtzSU";
+      window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+      <script src="assets/js/main.js"></script>
   </body>
   </html>
